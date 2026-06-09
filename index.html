@@ -427,19 +427,7 @@ if('serviceWorker' in navigator){
 const REPO = 'https://anonymous1375.github.io/Holy-Quran-Pages';
 const TOTAL = 851;
 
-// Build folder map — each folder covers ~28-30 pages
-// We'll define exact ranges to match your folder names precisely
-// Pattern: "Pages 1-40", "Pages 41-80"... adjust last folder to 851
-const FOLDERS = [];
-(function(){
-  let start = 1;
-  const size = 30;
-  while(start <= TOTAL){
-    const end = Math.min(start + size - 1, TOTAL);
-    FOLDERS.push({start, end, name:`Pages ${start}-${end}`});
-    start = end + 1;
-  }
-})();
+// Images: flat files 0001.png – 0851.png in repo root
 
 // Given a Quran page number (1 = Al-Fatiha), return the image URL
 // The PDF is left-to-right but Quran is right-to-left
@@ -447,12 +435,9 @@ const FOLDERS = [];
 // UNLESS your folders are already in Quran order (page 1 = first image)
 // Based on your description "pages are in order" — we treat them as Quran order
 function pageUrl(quranPage) {
-  // Find which folder this page is in
-  const folder = FOLDERS.find(f => quranPage >= f.start && quranPage <= f.end);
-  if(!folder) return '';
-  // File index within folder (0-based)
-  const fileIndex = quranPage - folder.start;
-  return `${REPO}/${encodeURIComponent(folder.name)}/${fileIndex}.png`;
+  // Files are named 0001.png to 0851.png, flat in the repo root
+  const padded = String(quranPage).padStart(4, '0');
+  return `${REPO}/${padded}.png`;
 }
 
 // ═══════════════════════════════════════════
