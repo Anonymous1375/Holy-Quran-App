@@ -11,351 +11,123 @@
 <title>Colour Coded Tajweed Quran</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-
 :root{
   --green-dark:#1e3d2a;
   --green-mid:#2d5a3d;
   --green-btn:#3a7050;
   --green-sel:#4a8860;
   --green-row:#2a5038;
-  --white:#ffffff;
-  --off-white:#f5f5f5;
-  --text:#ffffff;
-  --text-dim:rgba(255,255,255,0.65);
-  --text-dark:#1a1a1a;
+  --text:rgba(255,255,255,1);
+  --text-dim:rgba(255,255,255,0.6);
   --border:rgba(255,255,255,0.12);
-  --border-dark:rgba(0,0,0,0.1);
   --bnav-h:64px;
 }
+html,body{height:100%;width:100%;overflow:hidden;background:#1a1a1a;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;}
 
-html,body{
-  height:100%;width:100%;
-  overflow:hidden;
-  background:var(--green-dark);
-  color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  -webkit-font-smoothing:antialiased;
-}
+#app{display:flex;flex-direction:column;height:100%;width:100%;position:fixed;inset:0;}
 
-/* ── APP SHELL ── */
-#app{
-  display:flex;flex-direction:column;
-  height:100%;width:100%;
-  position:fixed;inset:0;
-}
+#viewer{flex:1;position:relative;overflow:hidden;background:#1a1a1a;display:flex;align-items:center;justify-content:center;touch-action:pinch-zoom;}
+#img-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform-origin:center center;will-change:transform;}
+#qimg{max-width:100%;max-height:100%;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges;}
+#tap-overlay{position:absolute;inset:0;z-index:5;}
 
-/* ── PAGE VIEWER ── */
-#viewer{
-  flex:1;
-  position:relative;
-  overflow:hidden;
-  background:#1a1a1a;
-  display:flex;align-items:center;justify-content:center;
-  touch-action:pinch-zoom;
-}
-
-#img-wrap{
-  position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  transform-origin:center center;
-  will-change:transform;
-}
-
-#qimg{
-  max-width:100%;max-height:100%;
-  object-fit:contain;
-  display:block;
-  user-select:none;
-  -webkit-user-drag:none;
-  pointer-events:none;
-  /* crisp rendering for Arabic text */
-  image-rendering:-webkit-optimize-contrast;
-  image-rendering:crisp-edges;
-}
-
-/* tap overlay — invisible, sits over image to catch taps */
-#tap-overlay{
-  position:absolute;inset:0;
-  z-index:5;
-}
-
-/* ── LOADING ── */
-#loading{
-  position:absolute;inset:0;z-index:20;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
-  background:rgba(26,26,26,0.9);
-  transition:opacity .25s ease;
-}
+#loading{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(26,26,26,0.92);transition:opacity .25s ease;}
 #loading.hide{opacity:0;pointer-events:none;}
-.spin{
-  width:36px;height:36px;
-  border:3px solid rgba(255,255,255,.15);
-  border-top-color:rgba(255,255,255,.7);
-  border-radius:50%;
-  animation:spin .75s linear infinite;
-}
+.spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.12);border-top-color:rgba(255,255,255,.7);border-radius:50%;animation:spin .75s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-.load-lbl{font-size:13px;color:rgba(255,255,255,.5);}
+.load-lbl{font-size:13px;color:var(--text-dim);}
 
-/* ── BOTTOM NAV ── */
-#bnav{
-  flex-shrink:0;
-  height:var(--bnav-h);
-  background:var(--green-dark);
-  border-top:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-around;
-  padding:0 40px;
-  z-index:50;
-  transition:transform .3s ease;
-}
+#bnav{height:var(--bnav-h);background:var(--green-dark);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 40px;z-index:50;transition:transform .3s ease;flex-shrink:0;}
 #bnav.hidden{transform:translateY(100%);}
-
-.nav-btn{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:4px;cursor:pointer;
-  color:var(--text-dim);
-  font-size:11px;letter-spacing:.02em;
-  background:none;border:none;
-  padding:8px 24px;
-  border-radius:10px;
-  transition:color .15s,background .15s;
-  -webkit-tap-highlight-color:transparent;
-}
+.nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:var(--text-dim);font-size:11px;letter-spacing:.02em;background:none;border:none;padding:8px 32px;border-radius:10px;transition:color .15s,background .15s;}
 .nav-btn svg{width:26px;height:26px;fill:currentColor;}
 .nav-btn:active{background:rgba(255,255,255,.08);color:var(--text);}
 
-/* ── PANELS (slide up from bottom) ── */
-.panel{
-  position:fixed;inset:0;z-index:100;
-  display:flex;flex-direction:column;
-  background:var(--green-dark);
-  transform:translateY(100%);
-  transition:transform .3s cubic-bezier(.4,0,.2,1);
-  pointer-events:none;
-}
+.panel{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;background:var(--green-dark);transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);pointer-events:none;}
 .panel.open{transform:translateY(0);pointer-events:all;}
 
-/* Panel header — matches reference app exactly */
-.pnl-hdr{
-  background:var(--green-mid);
-  padding:16px 16px 0;
-  flex-shrink:0;
-}
-.pnl-title-row{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:14px;
-}
-.pnl-title{
-  font-size:20px;font-weight:600;
-  color:var(--text);
-  /* Arabic title shown when relevant */
-}
-.pnl-ar{
-  font-size:22px;color:var(--text);
-  font-family:serif;
-}
-.pnl-close{
-  width:32px;height:32px;
-  background:rgba(255,255,255,.12);
-  border:none;border-radius:50%;
-  color:var(--text);font-size:18px;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;
-}
+.pnl-hdr{background:var(--green-mid);padding:16px 16px 0;flex-shrink:0;}
+.pnl-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.pnl-title{font-size:20px;font-weight:600;color:var(--text);}
+.pnl-close{width:32px;height:32px;background:rgba(255,255,255,.12);border:none;border-radius:50%;color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
 .pnl-close:active{background:rgba(255,255,255,.22);}
 
-/* Tab row inside panel header */
-.tab-row{
-  display:flex;gap:0;
-  border-bottom:none;
-}
-.tab-btn{
-  flex:1;padding:10px 0;
-  background:none;border:none;
-  color:var(--text-dim);font-size:15px;font-weight:500;
-  cursor:pointer;position:relative;
-  transition:color .15s;
-  border-bottom:3px solid transparent;
-}
-.tab-btn.on{
-  color:var(--text);
-  border-bottom-color:var(--text);
-}
+.tab-row{display:flex;}
+.tab-btn{flex:1;padding:10px 0;background:none;border:none;color:var(--text-dim);font-size:15px;font-weight:500;cursor:pointer;border-bottom:3px solid transparent;transition:color .15s;}
+.tab-btn.on{color:var(--text);border-bottom-color:var(--text);}
 
-/* Panel scroll body */
-.pnl-body{
-  flex:1;overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-}
+.pnl-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .pnl-body::-webkit-scrollbar{width:3px;}
 .pnl-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px;}
 
-/* ── SURAH LIST ── */
-.surah-item{
-  display:flex;align-items:center;
-  padding:0 16px;
-  height:64px;
-  cursor:pointer;
-  border-bottom:1px solid var(--border);
-  transition:background .12s;
-  gap:14px;
-}
+.surah-item{display:flex;align-items:center;padding:0 16px;height:64px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;gap:14px;}
 .surah-item:active{background:var(--green-row);}
-.si-num{
-  width:36px;height:36px;
-  border:1.5px solid rgba(255,255,255,.3);
-  border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:600;
-  color:var(--text);flex-shrink:0;
-}
+.si-num{width:36px;height:36px;border:1.5px solid rgba(255,255,255,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
 .si-body{flex:1;min-width:0;}
-.si-en{
-  font-size:16px;font-weight:600;color:var(--text);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
+.si-en{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .si-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
 .si-pg{font-size:13px;color:var(--text-dim);flex-shrink:0;}
 
-/* ── JUZ LIST ── */
-.juz-item{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 16px;height:60px;
-  cursor:pointer;border-bottom:1px solid var(--border);
-  transition:background .12s;
-}
-.juz-item:active{background:var(--green-row);}
-/* highlighted current juz */
-.juz-item.current{background:var(--green-sel);}
-.ji-left{display:flex;flex-direction:column;}
-.ji-name{font-size:15px;font-weight:600;color:var(--text);}
+.juz-item{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:60px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;}
+.juz-item:active,.juz-item.current{background:var(--green-sel);}
+.ji-name{font-size:15px;font-weight:600;}
 .ji-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
 .ji-pg{font-size:14px;font-weight:600;color:var(--text-dim);}
 
-/* ── BOOKMARKS ── */
-.bk-empty{
-  padding:48px 24px;text-align:center;
-  font-size:14px;color:var(--text-dim);line-height:1.6;
-}
-.bk-item{
-  display:flex;align-items:center;
-  padding:0 16px;height:64px;
-  cursor:pointer;border-bottom:1px solid var(--border);
-  gap:14px;transition:background .12s;
-}
-.bk-item:active{background:var(--green-row);}
-.bk-icon{font-size:22px;flex-shrink:0;}
-.bk-body{flex:1;min-width:0;}
-.bk-name{font-size:15px;font-weight:600;color:var(--text);}
-.bk-date{font-size:12px;color:var(--text-dim);margin-top:2px;}
-.bk-del{
-  width:32px;height:32px;flex-shrink:0;
-  background:rgba(220,50,50,.15);
-  border:1px solid rgba(220,50,50,.3);
-  border-radius:8px;color:#ff6b6b;font-size:16px;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;
-}
+.jump-wrap{padding:20px 16px 40px;}
+.jump-sec{margin-bottom:20px;}
+.jump-lbl{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.jump-row{display:flex;gap:8px;}
+.jump-in{flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:12px;font-size:16px;color:#fff;outline:none;}
+.jump-in:focus{border-color:rgba(255,255,255,.5);}
+.jump-go{background:var(--green-btn);border:none;border-radius:8px;padding:12px 20px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;}
+.jump-go:active{opacity:.85;}
 
-/* PAGE tab inside bookmarks — current page button */
-.add-bk-btn{
-  margin:12px 16px;
-  width:calc(100% - 32px);
-  background:var(--green-btn);
-  border:none;border-radius:10px;
-  color:var(--text);font-size:15px;font-weight:600;
-  padding:14px;cursor:pointer;
-  transition:background .15s;
-}
+.add-bk-btn{margin:12px 16px;width:calc(100% - 32px);background:var(--green-btn);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:600;padding:14px;cursor:pointer;transition:background .15s;}
 .add-bk-btn:active{background:var(--green-sel);}
+.bk-item{display:flex;align-items:center;padding:0 16px;height:64px;cursor:pointer;border-bottom:1px solid var(--border);gap:14px;transition:background .12s;}
+.bk-item:active{background:var(--green-row);}
+.bk-body{flex:1;min-width:0;}
+.bk-name{font-size:15px;font-weight:600;}
+.bk-date{font-size:12px;color:var(--text-dim);margin-top:2px;}
+.bk-del{width:32px;height:32px;flex-shrink:0;background:rgba(220,50,50,.15);border:1px solid rgba(220,50,50,.3);border-radius:8px;color:#ff6b6b;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.bk-empty{padding:48px 24px;text-align:center;font-size:14px;color:var(--text-dim);line-height:1.6;}
 
-/* ── PAGE NUMBER INDICATOR ── */
-#pg-indicator{
-  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
-  z-index:6;
-  background:rgba(0,0,0,.55);
-  color:rgba(255,255,255,.85);
-  font-size:12px;padding:4px 12px;border-radius:12px;
-  pointer-events:none;
-  opacity:0;transition:opacity .3s;
-  white-space:nowrap;
-}
+#pg-indicator{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:6;background:rgba(0,0,0,.6);color:rgba(255,255,255,.9);font-size:12px;padding:5px 14px;border-radius:12px;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap;}
 #pg-indicator.show{opacity:1;}
 
-/* ── TOAST ── */
-#toast{
-  position:fixed;bottom:80px;left:50%;
-  transform:translateX(-50%) translateY(6px);
-  background:rgba(30,61,42,.95);
-  border:1px solid rgba(255,255,255,.15);
-  color:var(--text);
-  padding:10px 20px;border-radius:20px;
-  font-size:13px;z-index:9000;
-  opacity:0;pointer-events:none;
-  transition:opacity .25s,transform .25s;
-  white-space:nowrap;
-  box-shadow:0 4px 20px rgba(0,0,0,.4);
-}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(6px);background:rgba(30,61,42,.97);border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9000;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4);}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-/* ── PAGE TRANSITIONS ── */
 @keyframes pgFade{from{opacity:0;}to{opacity:1;}}
-.pg-anim{animation:pgFade .2s ease;}
-
-/* ── LANDSCAPE ── */
-@media (orientation:landscape){
-  #viewer{
-    /* fill the full height minus bottom nav */
-  }
-  #qimg{
-    max-height:calc(100vh - var(--bnav-h));
-  }
-}
+.pg-anim{animation:pgFade .18s ease;}
 </style>
-<script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js');
-  });
-}
-</script></head>
+</head>
 <body>
 <div id="app">
-
-  <!-- PAGE VIEWER -->
   <div id="viewer">
-    <div id="img-wrap">
-      <img id="qimg" src="" alt="" draggable="false">
-    </div>
+    <div id="img-wrap"><img id="qimg" src="" alt="" draggable="false"></div>
     <div id="tap-overlay"></div>
-    <div id="loading">
-      <div class="spin"></div>
-      <div class="load-lbl" id="load-lbl">Loading…</div>
-    </div>
+    <div id="loading"><div class="spin"></div><div class="load-lbl" id="load-lbl">Loading…</div></div>
     <div id="pg-indicator"></div>
   </div>
-
-  <!-- BOTTOM NAV -->
   <div id="bnav">
     <button class="nav-btn" onclick="openPanel('pnav')">
-      <!-- compass/navigate icon -->
-      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13l-4 8 8-4-4-4z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
       Go To
     </button>
-    <button class="nav-btn" onclick="addBookmark()">
-      <!-- bookmark icon -->
-      <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+    <button class="nav-btn" onclick="openPanel('pbk')">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
       Bookmark
     </button>
   </div>
-
 </div>
 
 <!-- NAVIGATE PANEL -->
 <div class="panel" id="pnav">
   <div class="pnl-hdr">
     <div class="pnl-title-row">
-      <div class="pnl-title" id="pnav-title">Go To</div>
+      <div class="pnl-title">Go To</div>
       <button class="pnl-close" onclick="closePanel('pnav')">✕</button>
     </div>
     <div class="tab-row">
@@ -367,29 +139,28 @@ if('serviceWorker' in navigator){
   <div class="pnl-body">
     <div id="t-surah"></div>
     <div id="t-juz" style="display:none"></div>
-    <div id="t-page" style="display:none;padding:20px 16px 40px;">
-      <div style="margin-bottom:20px;">
-        <div style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Go to Page Number</div>
-        <div style="display:flex;gap:8px;">
-          <input id="inp-pg" type="number" min="1" max="851" placeholder="1 – 851"
-            style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:12px;font-size:16px;color:#fff;outline:none;">
-          <button onclick="jumpPage()" style="background:var(--green-btn);border:none;border-radius:8px;padding:12px 20px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;">Go</button>
+    <div id="t-page" style="display:none">
+      <div class="jump-wrap">
+        <div class="jump-sec">
+          <div class="jump-lbl">Page Number</div>
+          <div class="jump-row">
+            <input class="jump-in" id="inp-pg" type="number" min="1" max="851" placeholder="1 – 851">
+            <button class="jump-go" onclick="jumpPage()">Go</button>
+          </div>
         </div>
-      </div>
-      <div style="margin-bottom:20px;">
-        <div style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Go to Surah Number</div>
-        <div style="display:flex;gap:8px;">
-          <input id="inp-su" type="number" min="1" max="114" placeholder="1 – 114"
-            style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:12px;font-size:16px;color:#fff;outline:none;">
-          <button onclick="jumpSurah()" style="background:var(--green-btn);border:none;border-radius:8px;padding:12px 20px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;">Go</button>
+        <div class="jump-sec">
+          <div class="jump-lbl">Surah Number</div>
+          <div class="jump-row">
+            <input class="jump-in" id="inp-su" type="number" min="1" max="114" placeholder="1 – 114">
+            <button class="jump-go" onclick="jumpSurah()">Go</button>
+          </div>
         </div>
-      </div>
-      <div>
-        <div style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Go to Juz Number</div>
-        <div style="display:flex;gap:8px;">
-          <input id="inp-jz" type="number" min="1" max="30" placeholder="1 – 30"
-            style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:12px;font-size:16px;color:#fff;outline:none;">
-          <button onclick="jumpJuz()" style="background:var(--green-btn);border:none;border-radius:8px;padding:12px 20px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;">Go</button>
+        <div class="jump-sec">
+          <div class="jump-lbl">Juz Number</div>
+          <div class="jump-row">
+            <input class="jump-in" id="inp-jz" type="number" min="1" max="30" placeholder="1 – 30">
+            <button class="jump-go" onclick="jumpJuz()">Go</button>
+          </div>
         </div>
       </div>
     </div>
@@ -404,7 +175,7 @@ if('serviceWorker' in navigator){
       <button class="pnl-close" onclick="closePanel('pbk')">✕</button>
     </div>
     <div class="tab-row">
-      <button class="tab-btn on" onclick="">Page</button>
+      <button class="tab-btn on">Page</button>
     </div>
   </div>
   <div class="pnl-body">
@@ -416,237 +187,204 @@ if('serviceWorker' in navigator){
 <div id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════
-// IMAGE SOURCE
-// Your GitHub Pages repo + folder structure
-// Folders: "Pages 1-40", "Pages 41-80", etc.
-// Files inside each folder: 0.png, 1.png, 2.png...
-// Total: 851 pages (right-to-left — page 1 of Quran = last image in PDF)
-// ═══════════════════════════════════════════
-
-const REPO = 'https://anonymous1375.github.io/Holy-Quran-Pages';
+const REPO  = 'https://anonymous1375.github.io/Holy-Quran-Pages';
 const TOTAL = 851;
 
-// Images: flat files 0001.png – 0851.png in repo root
-
-// Given a Quran page number (1 = Al-Fatiha), return the image URL
-// The PDF is left-to-right but Quran is right-to-left
-// So Quran page 1 = PDF page TOTAL (851), page 2 = PDF page 850, etc.
-// UNLESS your folders are already in Quran order (page 1 = first image)
-// Based on your description "pages are in order" — we treat them as Quran order
-function pageUrl(quranPage) {
-  // Files are named 0001.png to 0851.png, flat in the repo root
-  const padded = String(quranPage).padStart(4, '0');
-  return `${REPO}/${padded}.png`;
+function pageUrl(n) {
+  return `${REPO}/${String(n).padStart(4,'0')}.png`;
 }
 
-// ═══════════════════════════════════════════
-// SURAH DATA (page numbers for this 13-line 851-page mushaf)
-// These are approximate — adjust if navigation lands on wrong page
-// ═══════════════════════════════════════════
 const SURAHS = [
-  {n:1,en:"Al-Fatihah",ar:"الفاتحة",sub:"The Opening",pg:1,ay:7,t:"Meccan"},
-  {n:2,en:"Al-Baqara",ar:"البقرة",sub:"The Heifer",pg:2,ay:286,t:"Medinan"},
-  {n:3,en:"Alu-i'Imran",ar:"آل عمران",sub:"Family of Imran",pg:74,ay:200,t:"Medinan"},
-  {n:4,en:"An-Nisaa",ar:"النساء",sub:"Women",pg:116,ay:176,t:"Medinan"},
-  {n:5,en:"Al-Maidah",ar:"المائدة",sub:"The Table",pg:160,ay:120,t:"Medinan"},
-  {n:6,en:"Al-An'am",ar:"الأنعام",sub:"Livestock",pg:198,ay:165,t:"Meccan"},
-  {n:7,en:"Al-A'raf",ar:"الأعراف",sub:"The Elevations",pg:232,ay:206,t:"Meccan"},
-  {n:8,en:"Al-Anfal",ar:"الأنفال",sub:"The Spoils",pg:272,ay:75,t:"Medinan"},
-  {n:9,en:"At-Tauba",ar:"التوبة",sub:"Repentance",pg:286,ay:129,t:"Medinan"},
-  {n:10,en:"Yunus",ar:"يونس",sub:"Jonah",pg:320,ay:109,t:"Meccan"},
-  {n:11,en:"Hud",ar:"هود",sub:"Hud",pg:338,ay:123,t:"Meccan"},
-  {n:12,en:"Yusuf",ar:"يوسف",sub:"Joseph",pg:358,ay:111,t:"Meccan"},
-  {n:13,en:"Ar-Ra'd",ar:"الرعد",sub:"The Thunder",pg:376,ay:43,t:"Medinan"},
-  {n:14,en:"Ibrahim",ar:"إبراهيم",sub:"Abraham",pg:384,ay:52,t:"Meccan"},
-  {n:15,en:"Al-Hijr",ar:"الحجر",sub:"The Rocky Tract",pg:394,ay:99,t:"Meccan"},
-  {n:16,en:"An-Nahl",ar:"النحل",sub:"The Bee",pg:402,ay:128,t:"Meccan"},
-  {n:17,en:"Al-Isra",ar:"الإسراء",sub:"The Night Journey",pg:426,ay:111,t:"Meccan"},
-  {n:18,en:"Al-Kahf",ar:"الكهف",sub:"The Cave",pg:442,ay:110,t:"Meccan"},
-  {n:19,en:"Maryam",ar:"مريم",sub:"Mary",pg:460,ay:98,t:"Meccan"},
-  {n:20,en:"Ta-Ha",ar:"طه",sub:"Ta-Ha",pg:472,ay:135,t:"Meccan"},
-  {n:21,en:"Al-Anbiya",ar:"الأنبياء",sub:"The Prophets",pg:488,ay:112,t:"Meccan"},
-  {n:22,en:"Al-Hajj",ar:"الحج",sub:"The Pilgrimage",pg:502,ay:78,t:"Medinan"},
-  {n:23,en:"Al-Mu'minun",ar:"المؤمنون",sub:"The Believers",pg:514,ay:118,t:"Meccan"},
-  {n:24,en:"An-Nur",ar:"النور",sub:"The Light",pg:526,ay:64,t:"Medinan"},
-  {n:25,en:"Al-Furqan",ar:"الفرقان",sub:"The Criterion",pg:540,ay:77,t:"Meccan"},
-  {n:26,en:"Ash-Shu'ara",ar:"الشعراء",sub:"The Poets",pg:550,ay:227,t:"Meccan"},
-  {n:27,en:"An-Naml",ar:"النمل",sub:"The Ant",pg:564,ay:93,t:"Meccan"},
-  {n:28,en:"Al-Qasas",ar:"القصص",sub:"The Stories",pg:576,ay:88,t:"Meccan"},
-  {n:29,en:"Al-Ankabut",ar:"العنكبوت",sub:"The Spider",pg:592,ay:69,t:"Meccan"},
-  {n:30,en:"Ar-Rum",ar:"الروم",sub:"The Romans",pg:604,ay:60,t:"Meccan"},
-  {n:31,en:"Luqman",ar:"لقمان",sub:"Luqman",pg:614,ay:34,t:"Meccan"},
-  {n:32,en:"As-Sajda",ar:"السجدة",sub:"The Prostration",pg:620,ay:30,t:"Meccan"},
-  {n:33,en:"Al-Ahzab",ar:"الأحزاب",sub:"The Confederates",pg:624,ay:73,t:"Medinan"},
-  {n:34,en:"Saba",ar:"سبأ",sub:"Sheba",pg:638,ay:54,t:"Meccan"},
-  {n:35,en:"Fatir",ar:"فاطر",sub:"The Originator",pg:646,ay:45,t:"Meccan"},
-  {n:36,en:"Ya-Sin",ar:"يس",sub:"Ya-Sin",pg:654,ay:83,t:"Meccan"},
-  {n:37,en:"As-Saffat",ar:"الصافات",sub:"Those Ranged in Ranks",pg:664,ay:182,t:"Meccan"},
-  {n:38,en:"Sad",ar:"ص",sub:"The Letter Sad",pg:674,ay:88,t:"Meccan"},
-  {n:39,en:"Az-Zumar",ar:"الزمر",sub:"The Groups",pg:682,ay:75,t:"Meccan"},
-  {n:40,en:"Ghafir",ar:"غافر",sub:"The Forgiver",pg:694,ay:85,t:"Meccan"},
-  {n:41,en:"Fussilat",ar:"فصلت",sub:"Explained in Detail",pg:706,ay:54,t:"Meccan"},
-  {n:42,en:"Ash-Shura",ar:"الشورى",sub:"Consultation",pg:714,ay:53,t:"Meccan"},
-  {n:43,en:"Az-Zukhruf",ar:"الزخرف",sub:"Ornaments of Gold",pg:722,ay:89,t:"Meccan"},
-  {n:44,en:"Ad-Dukhan",ar:"الدخان",sub:"The Smoke",pg:732,ay:59,t:"Meccan"},
-  {n:45,en:"Al-Jathiya",ar:"الجاثية",sub:"Crouching",pg:736,ay:37,t:"Meccan"},
-  {n:46,en:"Al-Ahqaf",ar:"الأحقاف",sub:"The Wind-Curved Sandhills",pg:742,ay:35,t:"Meccan"},
-  {n:47,en:"Muhammad",ar:"محمد",sub:"Muhammad",pg:750,ay:38,t:"Medinan"},
-  {n:48,en:"Al-Fath",ar:"الفتح",sub:"The Victory",pg:756,ay:29,t:"Medinan"},
-  {n:49,en:"Al-Hujurat",ar:"الحجرات",sub:"The Private Apartments",pg:762,ay:18,t:"Medinan"},
-  {n:50,en:"Qaf",ar:"ق",sub:"The Letter Qaf",pg:766,ay:45,t:"Meccan"},
-  {n:51,en:"Adh-Dhariyat",ar:"الذاريات",sub:"The Winnowing Winds",pg:770,ay:60,t:"Meccan"},
-  {n:52,en:"At-Tur",ar:"الطور",sub:"The Mount",pg:774,ay:49,t:"Meccan"},
-  {n:53,en:"An-Najm",ar:"النجم",sub:"The Star",pg:778,ay:62,t:"Meccan"},
-  {n:54,en:"Al-Qamar",ar:"القمر",sub:"The Moon",pg:780,ay:55,t:"Meccan"},
-  {n:55,en:"Ar-Rahman",ar:"الرحمن",sub:"The Beneficent",pg:784,ay:78,t:"Medinan"},
-  {n:56,en:"Al-Waqi'a",ar:"الواقعة",sub:"The Event",pg:788,ay:96,t:"Meccan"},
-  {n:57,en:"Al-Hadid",ar:"الحديد",sub:"The Iron",pg:792,ay:29,t:"Medinan"},
-  {n:58,en:"Al-Mujadila",ar:"المجادلة",sub:"The Pleading Woman",pg:798,ay:22,t:"Medinan"},
-  {n:59,en:"Al-Hashr",ar:"الحشر",sub:"The Exile",pg:802,ay:24,t:"Medinan"},
-  {n:60,en:"Al-Mumtahana",ar:"الممتحنة",sub:"She That is to be Examined",pg:806,ay:13,t:"Medinan"},
-  {n:61,en:"As-Saf",ar:"الصف",sub:"The Ranks",pg:808,ay:14,t:"Medinan"},
-  {n:62,en:"Al-Jumu'a",ar:"الجمعة",sub:"Friday",pg:810,ay:11,t:"Medinan"},
-  {n:63,en:"Al-Munafiqun",ar:"المنافقون",sub:"The Hypocrites",pg:812,ay:11,t:"Medinan"},
-  {n:64,en:"At-Taghabun",ar:"التغابن",sub:"Mutual Disillusion",pg:814,ay:18,t:"Medinan"},
-  {n:65,en:"At-Talaq",ar:"الطلاق",sub:"Divorce",pg:816,ay:12,t:"Medinan"},
-  {n:66,en:"At-Tahrim",ar:"التحريم",sub:"The Prohibition",pg:818,ay:12,t:"Medinan"},
-  {n:67,en:"Al-Mulk",ar:"الملك",sub:"The Sovereignty",pg:820,ay:30,t:"Meccan"},
-  {n:68,en:"Al-Qalam",ar:"القلم",sub:"The Pen",pg:824,ay:52,t:"Meccan"},
-  {n:69,en:"Al-Haqqah",ar:"الحاقة",sub:"The Reality",pg:826,ay:52,t:"Meccan"},
-  {n:70,en:"Al-Ma'arij",ar:"المعارج",sub:"The Ascending Stairways",pg:828,ay:44,t:"Meccan"},
-  {n:71,en:"Nuh",ar:"نوح",sub:"Noah",pg:830,ay:28,t:"Meccan"},
-  {n:72,en:"Al-Jinn",ar:"الجن",sub:"The Jinn",pg:832,ay:28,t:"Meccan"},
-  {n:73,en:"Al-Muzzammil",ar:"المزمل",sub:"The Enshrouded One",pg:834,ay:20,t:"Meccan"},
-  {n:74,en:"Al-Muddaththir",ar:"المدثر",sub:"The Cloaked One",pg:836,ay:56,t:"Meccan"},
-  {n:75,en:"Al-Qiyama",ar:"القيامة",sub:"The Resurrection",pg:838,ay:40,t:"Meccan"},
-  {n:76,en:"Al-Insan",ar:"الإنسان",sub:"Man",pg:838,ay:31,t:"Medinan"},
-  {n:77,en:"Al-Mursalat",ar:"المرسلات",sub:"The Emissaries",pg:840,ay:50,t:"Meccan"},
-  {n:78,en:"An-Naba",ar:"النبأ",sub:"The Tidings",pg:842,ay:40,t:"Meccan"},
-  {n:79,en:"An-Nazi'at",ar:"النازعات",sub:"Those Who Drag Forth",pg:842,ay:46,t:"Meccan"},
-  {n:80,en:"Abasa",ar:"عبس",sub:"He Frowned",pg:844,ay:42,t:"Meccan"},
-  {n:81,en:"At-Takwir",ar:"التكوير",sub:"The Overthrowing",pg:844,ay:29,t:"Meccan"},
-  {n:82,en:"Al-Infitar",ar:"الانفطار",sub:"The Cleaving",pg:846,ay:19,t:"Meccan"},
-  {n:83,en:"Al-Mutaffifin",ar:"المطففين",sub:"The Defrauding",pg:846,ay:36,t:"Meccan"},
-  {n:84,en:"Al-Inshiqaq",ar:"الانشقاق",sub:"The Sundering",pg:846,ay:25,t:"Meccan"},
-  {n:85,en:"Al-Buruj",ar:"البروج",sub:"The Mansions of the Stars",pg:848,ay:22,t:"Meccan"},
-  {n:86,en:"At-Tariq",ar:"الطارق",sub:"The Morning Star",pg:848,ay:17,t:"Meccan"},
-  {n:87,en:"Al-A'la",ar:"الأعلى",sub:"The Most High",pg:848,ay:19,t:"Meccan"},
-  {n:88,en:"Al-Ghashiya",ar:"الغاشية",sub:"The Overwhelming",pg:848,ay:26,t:"Meccan"},
-  {n:89,en:"Al-Fajr",ar:"الفجر",sub:"The Dawn",pg:848,ay:30,t:"Meccan"},
-  {n:90,en:"Al-Balad",ar:"البلد",sub:"The City",pg:850,ay:20,t:"Meccan"},
-  {n:91,en:"Ash-Shams",ar:"الشمس",sub:"The Sun",pg:850,ay:15,t:"Meccan"},
-  {n:92,en:"Al-Layl",ar:"الليل",sub:"The Night",pg:850,ay:21,t:"Meccan"},
-  {n:93,en:"Ad-Duha",ar:"الضحى",sub:"The Morning Hours",pg:850,ay:11,t:"Meccan"},
-  {n:94,en:"Ash-Sharh",ar:"الشرح",sub:"Solace",pg:850,ay:8,t:"Meccan"},
-  {n:95,en:"At-Tin",ar:"التين",sub:"The Fig",pg:850,ay:8,t:"Meccan"},
-  {n:96,en:"Al-Alaq",ar:"العلق",sub:"The Clot",pg:850,ay:19,t:"Meccan"},
-  {n:97,en:"Al-Qadr",ar:"القدر",sub:"The Power",pg:850,ay:5,t:"Meccan"},
-  {n:98,en:"Al-Bayyina",ar:"البينة",sub:"The Clear Proof",pg:850,ay:8,t:"Medinan"},
-  {n:99,en:"Az-Zalzala",ar:"الزلزلة",sub:"The Earthquake",pg:851,ay:8,t:"Medinan"},
-  {n:100,en:"Al-Adiyat",ar:"العاديات",sub:"The Courser",pg:851,ay:11,t:"Meccan"},
-  {n:101,en:"Al-Qaria",ar:"القارعة",sub:"The Calamity",pg:851,ay:11,t:"Meccan"},
-  {n:102,en:"At-Takathur",ar:"التكاثر",sub:"The Rivalry in World Increase",pg:851,ay:8,t:"Meccan"},
-  {n:103,en:"Al-Asr",ar:"العصر",sub:"The Declining Day",pg:851,ay:3,t:"Meccan"},
-  {n:104,en:"Al-Humaza",ar:"الهمزة",sub:"The Traducer",pg:851,ay:9,t:"Meccan"},
-  {n:105,en:"Al-Fil",ar:"الفيل",sub:"The Elephant",pg:851,ay:5,t:"Meccan"},
-  {n:106,en:"Quraysh",ar:"قريش",sub:"Quraysh",pg:851,ay:4,t:"Meccan"},
-  {n:107,en:"Al-Ma'un",ar:"الماعون",sub:"Small Kindnesses",pg:851,ay:7,t:"Meccan"},
-  {n:108,en:"Al-Kawthar",ar:"الكوثر",sub:"Abundance",pg:851,ay:3,t:"Meccan"},
-  {n:109,en:"Al-Kafirun",ar:"الكافرون",sub:"The Disbelievers",pg:851,ay:6,t:"Meccan"},
-  {n:110,en:"An-Nasr",ar:"النصر",sub:"The Divine Support",pg:851,ay:3,t:"Medinan"},
-  {n:111,en:"Al-Masad",ar:"المسد",sub:"The Palm Fibre",pg:851,ay:5,t:"Meccan"},
-  {n:112,en:"Al-Ikhlas",ar:"الإخلاص",sub:"Sincerity",pg:851,ay:4,t:"Meccan"},
-  {n:113,en:"Al-Falaq",ar:"الفلق",sub:"The Daybreak",pg:851,ay:5,t:"Meccan"},
-  {n:114,en:"An-Nas",ar:"الناس",sub:"Mankind",pg:851,ay:6,t:"Meccan"},
+  {n:1,  en:"Al-Fatihah",    sub:"The Opening",               pg:4,   ay:7},
+  {n:2,  en:"Al-Baqarah",    sub:"The Cow",                   pg:5,   ay:286},
+  {n:3,  en:"Aal-Imran",     sub:"Family of Imran",           pg:70,  ay:200},
+  {n:4,  en:"An-Nisa",       sub:"The Women",                 pg:108, ay:176},
+  {n:5,  en:"Al-Ma'idah",    sub:"The Table Spread",          pg:149, ay:120},
+  {n:6,  en:"Al-An'am",      sub:"The Cattle",                pg:179, ay:165},
+  {n:7,  en:"Al-A'raf",      sub:"The Heights",               pg:211, ay:206},
+  {n:8,  en:"Al-Anfal",      sub:"The Spoils of War",         pg:248, ay:75},
+  {n:9,  en:"At-Tawbah",     sub:"The Repentance",            pg:262, ay:129},
+  {n:10, en:"Yunus",         sub:"Jonah",                     pg:290, ay:109},
+  {n:11, en:"Hud",           sub:"Hud",                       pg:310, ay:123},
+  {n:12, en:"Yusuf",         sub:"Joseph",                    pg:330, ay:111},
+  {n:13, en:"Ar-Ra'd",       sub:"The Thunder",               pg:348, ay:43},
+  {n:14, en:"Ibrahim",       sub:"Abraham",                   pg:357, ay:52},
+  {n:15, en:"Al-Hijr",       sub:"The Rocky Tract",           pg:366, ay:99},
+  {n:16, en:"An-Nahl",       sub:"The Bee",                   pg:374, ay:128},
+  {n:17, en:"Al-Isra",       sub:"The Night Journey",         pg:395, ay:111},
+  {n:18, en:"Al-Kahf",       sub:"The Cave",                  pg:410, ay:110},
+  {n:19, en:"Maryam",        sub:"Mary",                      pg:427, ay:98},
+  {n:20, en:"Ta-Ha",         sub:"Ta-Ha",                     pg:437, ay:135},
+  {n:21, en:"Al-Anbiya",     sub:"The Prophets",              pg:451, ay:112},
+  {n:22, en:"Al-Hajj",       sub:"The Pilgrimage",            pg:464, ay:78},
+  {n:23, en:"Al-Mu'minun",   sub:"The Believers",             pg:479, ay:118},
+  {n:24, en:"An-Nur",        sub:"The Light",                 pg:489, ay:64},
+  {n:25, en:"Al-Furqan",     sub:"The Criterion",             pg:503, ay:77},
+  {n:26, en:"Ash-Shu'ara",   sub:"The Poets",                 pg:513, ay:227},
+  {n:27, en:"An-Naml",       sub:"The Ant",                   pg:527, ay:93},
+  {n:28, en:"Al-Qasas",      sub:"The Stories",               pg:539, ay:88},
+  {n:29, en:"Al-Ankabut",    sub:"The Spider",                pg:554, ay:69},
+  {n:30, en:"Ar-Rum",        sub:"The Romans",                pg:564, ay:60},
+  {n:31, en:"Luqman",        sub:"Luqman",                    pg:573, ay:34},
+  {n:32, en:"As-Sajdah",     sub:"The Prostration",           pg:579, ay:30},
+  {n:33, en:"Al-Ahzab",      sub:"The Combined Forces",       pg:583, ay:73},
+  {n:34, en:"Saba",          sub:"Sheba",                     pg:597, ay:54},
+  {n:35, en:"Fatir",         sub:"The Originator",            pg:605, ay:45},
+  {n:36, en:"Ya-Sin",        sub:"Ya-Sin",                    pg:613, ay:83},
+  {n:37, en:"As-Saffat",     sub:"Those Ranged in Ranks",     pg:620, ay:182},
+  {n:38, en:"Sad",           sub:"The Letter Sad",            pg:630, ay:88},
+  {n:39, en:"Az-Zumar",      sub:"The Groups",                pg:637, ay:75},
+  {n:40, en:"Ghafir",        sub:"The Forgiver",              pg:649, ay:85},
+  {n:41, en:"Fussilat",      sub:"Explained in Detail",       pg:661, ay:54},
+  {n:42, en:"Ash-Shura",     sub:"The Consultation",          pg:670, ay:53},
+  {n:43, en:"Az-Zukhruf",    sub:"The Gold Adornments",       pg:679, ay:89},
+  {n:44, en:"Ad-Dukhan",     sub:"The Smoke",                 pg:688, ay:59},
+  {n:45, en:"Al-Jathiyah",   sub:"The Crouching",             pg:693, ay:37},
+  {n:46, en:"Al-Ahqaf",      sub:"The Wind-Curved Sandhills", pg:699, ay:35},
+  {n:47, en:"Muhammad",      sub:"Muhammad",                  pg:706, ay:38},
+  {n:48, en:"Al-Fath",       sub:"The Victory",               pg:712, ay:29},
+  {n:49, en:"Al-Hujurat",    sub:"The Private Apartments",    pg:718, ay:18},
+  {n:50, en:"Qaf",           sub:"The Letter Qaf",            pg:723, ay:45},
+  {n:51, en:"Adh-Dhariyat",  sub:"The Winnowing Winds",       pg:727, ay:60},
+  {n:52, en:"At-Tur",        sub:"The Mount",                 pg:731, ay:49},
+  {n:53, en:"An-Najm",       sub:"The Star",                  pg:734, ay:62},
+  {n:54, en:"Al-Qamar",      sub:"The Moon",                  pg:738, ay:55},
+  {n:55, en:"Ar-Rahman",     sub:"The Beneficent",            pg:742, ay:78},
+  {n:56, en:"Al-Waqi'ah",    sub:"The Inevitable",            pg:747, ay:96},
+  {n:57, en:"Al-Hadid",      sub:"The Iron",                  pg:752, ay:29},
+  {n:58, en:"Al-Mujadilah",  sub:"The Pleading Woman",        pg:759, ay:22},
+  {n:59, en:"Al-Hashr",      sub:"The Exile",                 pg:763, ay:24},
+  {n:60, en:"Al-Mumtahanah", sub:"She That is to be Examined",pg:768, ay:13},
+  {n:61, en:"As-Saff",       sub:"The Ranks",                 pg:772, ay:14},
+  {n:62, en:"Al-Jumu'ah",    sub:"Friday",                    pg:775, ay:11},
+  {n:63, en:"Al-Munafiqun",  sub:"The Hypocrites",            pg:777, ay:11},
+  {n:64, en:"At-Taghabun",   sub:"Mutual Disillusion",        pg:779, ay:18},
+  {n:65, en:"At-Talaq",      sub:"The Divorce",               pg:782, ay:12},
+  {n:66, en:"At-Tahrim",     sub:"The Prohibition",           pg:785, ay:12},
+  {n:67, en:"Al-Mulk",       sub:"The Sovereignty",           pg:789, ay:30},
+  {n:68, en:"Al-Qalam",      sub:"The Pen",                   pg:792, ay:52},
+  {n:69, en:"Al-Haqqah",     sub:"The Reality",               pg:796, ay:52},
+  {n:70, en:"Al-Ma'arij",    sub:"The Ascending Stairways",   pg:799, ay:44},
+  {n:71, en:"Nuh",           sub:"Noah",                      pg:802, ay:28},
+  {n:72, en:"Al-Jinn",       sub:"The Jinn",                  pg:805, ay:28},
+  {n:73, en:"Al-Muzzammil",  sub:"The Enshrouded One",        pg:808, ay:20},
+  {n:74, en:"Al-Muddaththir",sub:"The Cloaked One",           pg:810, ay:56},
+  {n:75, en:"Al-Qiyamah",    sub:"The Resurrection",          pg:813, ay:40},
+  {n:76, en:"Al-Insan",      sub:"Man",                       pg:815, ay:31},
+  {n:77, en:"Al-Mursalat",   sub:"The Emissaries",            pg:818, ay:50},
+  {n:78, en:"An-Naba",       sub:"The Tidings",               pg:821, ay:40},
+  {n:79, en:"An-Nazi'at",    sub:"Those Who Drag Forth",      pg:822, ay:46},
+  {n:80, en:"Abasa",         sub:"He Frowned",                pg:824, ay:42},
+  {n:81, en:"At-Takwir",     sub:"The Overthrowing",          pg:826, ay:29},
+  {n:82, en:"Al-Infitar",    sub:"The Cleaving",              pg:827, ay:19},
+  {n:83, en:"Al-Mutaffifin", sub:"The Defrauding",            pg:828, ay:36},
+  {n:84, en:"Al-Inshiqaq",   sub:"The Sundering",             pg:830, ay:25},
+  {n:85, en:"Al-Buruj",      sub:"The Mansions of the Stars", pg:831, ay:22},
+  {n:86, en:"At-Tariq",      sub:"The Morning Star",          pg:832, ay:17},
+  {n:87, en:"Al-A'la",       sub:"The Most High",             pg:833, ay:19},
+  {n:88, en:"Al-Ghashiyah",  sub:"The Overwhelming",          pg:834, ay:26},
+  {n:89, en:"Al-Fajr",       sub:"The Dawn",                  pg:835, ay:30},
+  {n:90, en:"Al-Balad",      sub:"The City",                  pg:837, ay:20},
+  {n:91, en:"Ash-Shams",     sub:"The Sun",                   pg:838, ay:15},
+  {n:92, en:"Al-Layl",       sub:"The Night",                 pg:839, ay:21},
+  {n:93, en:"Ad-Duha",       sub:"The Morning Hours",         pg:840, ay:11},
+  {n:94, en:"Ash-Sharh",     sub:"The Relief",                pg:840, ay:8},
+  {n:95, en:"At-Tin",        sub:"The Fig",                   pg:841, ay:8},
+  {n:96, en:"Al-Alaq",       sub:"The Clot",                  pg:841, ay:19},
+  {n:97, en:"Al-Qadr",       sub:"The Power",                 pg:842, ay:5},
+  {n:98, en:"Al-Bayyinah",   sub:"The Clear Proof",           pg:842, ay:8},
+  {n:99, en:"Az-Zalzalah",   sub:"The Earthquake",            pg:843, ay:8},
+  {n:100,en:"Al-Adiyat",     sub:"The Courser",               pg:844, ay:11},
+  {n:101,en:"Al-Qari'ah",    sub:"The Calamity",              pg:845, ay:11},
+  {n:102,en:"At-Takathur",   sub:"The Rivalry",               pg:845, ay:8},
+  {n:103,en:"Al-Asr",        sub:"The Declining Day",         pg:846, ay:3},
+  {n:104,en:"Al-Humazah",    sub:"The Traducer",              pg:846, ay:9},
+  {n:105,en:"Al-Fil",        sub:"The Elephant",              pg:846, ay:5},
+  {n:106,en:"Quraysh",       sub:"Quraysh",                   pg:847, ay:4},
+  {n:107,en:"Al-Ma'un",      sub:"Small Kindnesses",          pg:847, ay:7},
+  {n:108,en:"Al-Kawthar",    sub:"Abundance",                 pg:848, ay:3},
+  {n:109,en:"Al-Kafirun",    sub:"The Disbelievers",          pg:848, ay:6},
+  {n:110,en:"An-Nasr",       sub:"The Divine Support",        pg:848, ay:3},
+  {n:111,en:"Al-Masad",      sub:"The Palm Fibre",            pg:849, ay:5},
+  {n:112,en:"Al-Ikhlas",     sub:"Sincerity",                 pg:849, ay:4},
+  {n:113,en:"Al-Falaq",      sub:"The Daybreak",              pg:849, ay:5},
+  {n:114,en:"An-Nas",        sub:"Mankind",                   pg:850, ay:6},
 ];
 
 const JUZS = [
-  {n:1,name:"Juz 1",ar:"الجزء ١",sub:"Alif Lam Meem",pg:1},
-  {n:2,name:"Juz 2",ar:"الجزء ٢",sub:"Sayaqool",pg:28},
-  {n:3,name:"Juz 3",ar:"الجزء ٣",sub:"Tilkar Rusul",pg:56},
-  {n:4,name:"Juz 4",ar:"الجزء ٤",sub:"Lan Tanaloo",pg:84},
-  {n:5,name:"Juz 5",ar:"الجزء ٥",sub:"Wal Mohsanat",pg:112},
-  {n:6,name:"Juz 6",ar:"الجزء ٦",sub:"La Yuhibbullah",pg:140},
-  {n:7,name:"Juz 7",ar:"الجزء ٧",sub:"Wa Iza Sami'oo",pg:168},
-  {n:8,name:"Juz 8",ar:"الجزء ٨",sub:"Wa Law Annana",pg:198},
-  {n:9,name:"Juz 9",ar:"الجزء ٩",sub:"Qalal Mala",pg:226},
-  {n:10,name:"Juz 10",ar:"الجزء ١٠",sub:"Wa A'lamoo",pg:254},
-  {n:11,name:"Juz 11",ar:"الجزء ١١",sub:"Ya'taziroona",pg:282},
-  {n:12,name:"Juz 12",ar:"الجزء ١٢",sub:"Wa Mamin Da'abba",pg:310},
-  {n:13,name:"Juz 13",ar:"الجزء ١٣",sub:"Wa Maa Ubarri'u",pg:338},
-  {n:14,name:"Juz 14",ar:"الجزء ١٤",sub:"Rubama",pg:366},
-  {n:15,name:"Juz 15",ar:"الجزء ١٥",sub:"Subhanallazi",pg:394},
-  {n:16,name:"Juz 16",ar:"الجزء ١٦",sub:"Qal Alam",pg:422},
-  {n:17,name:"Juz 17",ar:"الجزء ١٧",sub:"Iqtaraba",pg:450},
-  {n:18,name:"Juz 18",ar:"الجزء ١٨",sub:"Qad Aflaha",pg:478},
-  {n:19,name:"Juz 19",ar:"الجزء ١٩",sub:"Wa Qalallazina",pg:506},
-  {n:20,name:"Juz 20",ar:"الجزء ٢٠",sub:"Amman Khalaqa",pg:534},
-  {n:21,name:"Juz 21",ar:"الجزء ٢١",sub:"Utlu Ma Oohi",pg:562},
-  {n:22,name:"Juz 22",ar:"الجزء ٢٢",sub:"Wa Manyaqnut",pg:590},
-  {n:23,name:"Juz 23",ar:"الجزء ٢٣",sub:"Wa Mali",pg:618},
-  {n:24,name:"Juz 24",ar:"الجزء ٢٤",sub:"Faman Azlamu",pg:646},
-  {n:25,name:"Juz 25",ar:"الجزء ٢٥",sub:"Ilaihi Yuraddu",pg:674},
-  {n:26,name:"Juz 26",ar:"الجزء ٢٦",sub:"Ha Meem",pg:702},
-  {n:27,name:"Juz 27",ar:"الجزء ٢٧",sub:"Qala Fama Khatbukum",pg:730},
-  {n:28,name:"Juz 28",ar:"الجزء ٢٨",sub:"Qad Sami Allah",pg:758},
-  {n:29,name:"Juz 29",ar:"الجزء ٢٩",sub:"Tabarakallazi",pg:786},
-  {n:30,name:"Juz 30",ar:"الجزء ٣٠",sub:"Amma",pg:814},
+  {n:1, name:"Juz 1",  sub:"Alif Lam Meem",          pg:4},
+  {n:2, name:"Juz 2",  sub:"Sayaqool",                pg:31},
+  {n:3, name:"Juz 3",  sub:"Tilkar Rusul",            pg:59},
+  {n:4, name:"Juz 4",  sub:"Lan Tanaloo",             pg:87},
+  {n:5, name:"Juz 5",  sub:"Wal Mohsanat",            pg:115},
+  {n:6, name:"Juz 6",  sub:"La Yuhibbullah",          pg:143},
+  {n:7, name:"Juz 7",  sub:"Wa Iza Sami'oo",          pg:171},
+  {n:8, name:"Juz 8",  sub:"Wa Law Annana",           pg:199},
+  {n:9, name:"Juz 9",  sub:"Qalal Mala",              pg:227},
+  {n:10,name:"Juz 10", sub:"Wa A'lamoo",              pg:255},
+  {n:11,name:"Juz 11", sub:"Ya'taziroona",            pg:283},
+  {n:12,name:"Juz 12", sub:"Wa Mamin Da'abba",        pg:311},
+  {n:13,name:"Juz 13", sub:"Wa Maa Ubarri'u",         pg:339},
+  {n:14,name:"Juz 14", sub:"Rubama",                  pg:367},
+  {n:15,name:"Juz 15", sub:"Subhanallazi",            pg:395},
+  {n:16,name:"Juz 16", sub:"Qal Alam",                pg:423},
+  {n:17,name:"Juz 17", sub:"Iqtaraba",                pg:451},
+  {n:18,name:"Juz 18", sub:"Qad Aflaha",              pg:479},
+  {n:19,name:"Juz 19", sub:"Wa Qalallazina",          pg:507},
+  {n:20,name:"Juz 20", sub:"Amman Khalaqa",           pg:535},
+  {n:21,name:"Juz 21", sub:"Utlu Ma Oohi",            pg:561},
+  {n:22,name:"Juz 22", sub:"Wa Manyaqnut",            pg:589},
+  {n:23,name:"Juz 23", sub:"Wa Mali",                 pg:615},
+  {n:24,name:"Juz 24", sub:"Faman Azlamu",            pg:643},
+  {n:25,name:"Juz 25", sub:"Ilaihi Yuraddu",          pg:669},
+  {n:26,name:"Juz 26", sub:"Ha Meem",                 pg:699},
+  {n:27,name:"Juz 27", sub:"Qala Fama Khatbukum",     pg:729},
+  {n:28,name:"Juz 28", sub:"Qad Sami Allah",          pg:759},
+  {n:29,name:"Juz 29", sub:"Tabarakallazi",           pg:789},
+  {n:30,name:"Juz 30", sub:"Amma",                    pg:821},
 ];
 
-// ═══════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════
-let curPage = parseInt(localStorage.getItem('qpg')||'1');
+let curPage = parseInt(localStorage.getItem('qpg')||'4');
 let bookmarks = JSON.parse(localStorage.getItem('qtbk')||'[]');
 let menuVisible = true;
 let preloaded = {};
 
-// ═══════════════════════════════════════════
-// PAGE LOADING
-// ═══════════════════════════════════════════
-function loadPage(n, dir=0) {
+function loadPage(n) {
   n = Math.max(1, Math.min(TOTAL, n));
   curPage = n;
   localStorage.setItem('qpg', n);
 
   const img = document.getElementById('qimg');
   const loader = document.getElementById('loading');
-  const lbl = document.getElementById('load-lbl');
 
   loader.classList.remove('hide');
-  lbl.textContent = `Page ${n}…`;
 
   const url = pageUrl(n);
-
-  if(preloaded[n]) {
-    img.src = url;
-    img.className = 'pg-anim';
-    loader.classList.add('hide');
-    showPageIndicator(n);
-    preloadAdjacent(n);
-    return;
-  }
-
   const tmp = new Image();
   tmp.onload = () => {
     img.src = url;
     img.className = 'pg-anim';
     loader.classList.add('hide');
     preloaded[n] = true;
-    showPageIndicator(n);
+    showIndicator(n);
     preloadAdjacent(n);
   };
   tmp.onerror = () => {
     loader.classList.add('hide');
-    lbl.textContent = 'Failed to load';
-    showToast('Could not load page ' + n + ' — check connection');
+    showToast('Could not load page ' + n);
   };
-  tmp.src = url;
+  tmp.src = preloaded[n] ? '' : url;
+  if(preloaded[n]) {
+    img.src = url;
+    img.className = 'pg-anim';
+    loader.classList.add('hide');
+    showIndicator(n);
+    preloadAdjacent(n);
+  }
 }
 
 function preloadAdjacent(n) {
-  [n-1, n+1, n+2].forEach(p => {
+  [n+1, n-1, n+2].forEach(p => {
     if(p >= 1 && p <= TOTAL && !preloaded[p]) {
       const t = new Image();
       t.onload = () => preloaded[p] = true;
@@ -655,162 +393,119 @@ function preloadAdjacent(n) {
   });
 }
 
-function showPageIndicator(n) {
-  const el = document.getElementById('pg-indicator');
+function showIndicator(n) {
   const s = getSurah(n);
   const j = getJuz(n);
+  const el = document.getElementById('pg-indicator');
   el.textContent = `${s.en}  ·  Page ${n}  ·  ${j.name}`;
   el.classList.add('show');
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), 2000);
 }
 
-// ═══════════════════════════════════════════
-// PINCH TO ZOOM (no double tap, no tap-to-select)
-// ═══════════════════════════════════════════
+// Pinch to zoom — no double tap
+const viewer = document.getElementById('viewer');
 const wrap = document.getElementById('img-wrap');
 const tapOverlay = document.getElementById('tap-overlay');
-let sc=1, tx=0, ty=0, startDist=0, startSc=1, panX=0, panY=0, lastX=0, lastY=0;
-let isPinching=false, isPanning=false;
-let swipeStartX=0, swipeStartY=0;
+let sc=1, tx=0, ty=0, startDist=0, startSc=1, panOriginX=0, panOriginY=0;
+let isPinching=false, swipeStartX=0, swipeStartY=0;
 
 function applyT() {
   wrap.style.transform = `translate(${tx}px,${ty}px) scale(${sc})`;
 }
-function resetT(smooth=true) {
+function resetT() {
   sc=1; tx=0; ty=0;
-  if(smooth) {
-    wrap.style.transition = 'transform .25s ease';
-    applyT();
-    setTimeout(() => wrap.style.transition='', 260);
-  } else {
-    wrap.style.transition = '';
-    applyT();
-  }
+  wrap.style.transition = 'transform .25s ease';
+  applyT();
+  setTimeout(() => wrap.style.transition='', 260);
 }
-
-const viewer = document.getElementById('viewer');
 
 viewer.addEventListener('touchstart', e => {
   if(e.touches.length === 2) {
     isPinching = true;
-    isPanning = false;
-    startDist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
+    startDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
     startSc = sc;
     e.preventDefault();
   } else if(e.touches.length === 1) {
-    swipeStartX = e.touches[0].clientX;
-    swipeStartY = e.touches[0].clientY;
-    lastX = e.touches[0].clientX - tx;
-    lastY = e.touches[0].clientY - ty;
-    isPanning = sc > 1.05;
+    panOriginX = e.touches[0].clientX - tx;
+    panOriginY = e.touches[0].clientY - ty;
   }
-}, {passive: false});
+}, {passive:false});
 
 viewer.addEventListener('touchmove', e => {
   if(e.touches.length === 2 && isPinching) {
     e.preventDefault();
-    const dist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-    sc = Math.min(5, Math.max(1, startSc * (dist / startDist)));
+    const dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    sc = Math.min(5, Math.max(1, startSc * (dist/startDist)));
     if(sc <= 1) { tx=0; ty=0; }
     wrap.style.transition = '';
     applyT();
-  } else if(e.touches.length === 1 && isPanning) {
+  } else if(e.touches.length === 1 && sc > 1.05) {
     e.preventDefault();
-    tx = e.touches[0].clientX - lastX;
-    ty = e.touches[0].clientY - lastY;
+    tx = e.touches[0].clientX - panOriginX;
+    ty = e.touches[0].clientY - panOriginY;
     wrap.style.transition = '';
     applyT();
   }
-}, {passive: false});
+}, {passive:false});
 
 viewer.addEventListener('touchend', e => {
   if(e.touches.length === 0) {
     isPinching = false;
-    if(sc < 1.05) resetT(true);
-    isPanning = sc > 1.05;
+    if(sc < 1.05) resetT();
   }
-}, {passive: true});
+}, {passive:true});
 
-// tap overlay — toggle menu & handle swipe
+// Tap to toggle menu + swipe to turn pages
 tapOverlay.addEventListener('touchstart', e => {
   swipeStartX = e.touches[0].clientX;
   swipeStartY = e.touches[0].clientY;
-}, {passive: true});
+}, {passive:true});
 
 tapOverlay.addEventListener('touchend', e => {
-  if(sc > 1.05) return; // don't swipe when zoomed
+  if(sc > 1.05) return;
   const dx = e.changedTouches[0].clientX - swipeStartX;
   const dy = e.changedTouches[0].clientY - swipeStartY;
   const dist = Math.sqrt(dx*dx + dy*dy);
 
   if(dist < 12) {
-    // it's a tap — toggle menu
-    toggleMenu();
+    // tap — toggle menu
+    menuVisible = !menuVisible;
+    document.getElementById('bnav').classList.toggle('hidden', !menuVisible);
     return;
   }
 
   if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
-    // horizontal swipe — right-to-left reading
-    // swipe RIGHT (dx > 0) = previous page (going backwards in Quran)
-    // swipe LEFT (dx < 0) = next page (going forward in Quran)
-    loadPage(curPage + (dx < 0 ? 1 : -1));
+    // RTL: swipe left-to-right (dx > 0) = forward (higher page number)
+    //      swipe right-to-left (dx < 0) = backward (lower page number)
+    loadPage(curPage + (dx > 0 ? 1 : -1));
   }
-}, {passive: true});
+}, {passive:true});
 
-// ═══════════════════════════════════════════
-// MENU VISIBILITY
-// ═══════════════════════════════════════════
-function toggleMenu() {
-  menuVisible = !menuVisible;
-  document.getElementById('bnav').classList.toggle('hidden', !menuVisible);
-}
-
-function showMenu() {
+function openPanel(id) {
   menuVisible = true;
   document.getElementById('bnav').classList.remove('hidden');
-}
-
-// ═══════════════════════════════════════════
-// PANELS
-// ═══════════════════════════════════════════
-function openPanel(id) {
-  showMenu();
-  document.getElementById(id).classList.add('open');
+  if(id === 'pnav') buildJuzList();
   if(id === 'pbk') renderBookmarks();
+  document.getElementById(id).classList.add('open');
 }
 function closePanel(id) {
   document.getElementById(id).classList.remove('open');
 }
 
-// ═══════════════════════════════════════════
-// TABS
-// ═══════════════════════════════════════════
 function swTab(btn, tid) {
-  // reset all tabs in same panel
-  btn.closest('.pnl-hdr').querySelectorAll('.tab-btn').forEach(t => t.classList.remove('on'));
+  btn.closest('.tab-row').querySelectorAll('.tab-btn').forEach(t => t.classList.remove('on'));
   btn.classList.add('on');
-  // hide all tab content in same panel
-  const panel = btn.closest('.panel');
-  panel.querySelectorAll('.pnl-body > div').forEach(d => d.style.display='none');
+  btn.closest('.panel').querySelectorAll('.pnl-body > div').forEach(d => d.style.display='none');
   document.getElementById(tid).style.display = '';
 }
 
-// ═══════════════════════════════════════════
-// BUILD LISTS
-// ═══════════════════════════════════════════
 function buildSurahList() {
   document.getElementById('t-surah').innerHTML = SURAHS.map(s => `
-    <div class="surah-item" onclick="goTo(${s.pg});closePanel('pnav')">
+    <div class="surah-item" onclick="loadPage(${s.pg});closePanel('pnav')">
       <div class="si-num">${s.n}</div>
       <div class="si-body">
-        <div class="si-en">${s.n < 10 ? '0'+s.n : s.n}. ${s.en}</div>
+        <div class="si-en">${String(s.n).padStart(2,'0')}. ${s.en}</div>
         <div class="si-sub">${s.sub}</div>
       </div>
       <div class="si-pg">${s.ay}</div>
@@ -820,8 +515,8 @@ function buildSurahList() {
 function buildJuzList() {
   const cur = getJuz(curPage).n;
   document.getElementById('t-juz').innerHTML = JUZS.map(j => `
-    <div class="juz-item${j.n===cur?' current':''}" onclick="goTo(${j.pg});closePanel('pnav')">
-      <div class="ji-left">
+    <div class="juz-item${j.n===cur?' current':''}" onclick="loadPage(${j.pg});closePanel('pnav')">
+      <div>
         <div class="ji-name">${j.name}</div>
         <div class="ji-sub">${j.sub}</div>
       </div>
@@ -829,71 +524,28 @@ function buildJuzList() {
     </div>`).join('');
 }
 
-// ═══════════════════════════════════════════
-// JUMP
-// ═══════════════════════════════════════════
-function jumpPage() {
-  const v = parseInt(document.getElementById('inp-pg').value);
-  if(v >= 1 && v <= TOTAL) { goTo(v); closePanel('pnav'); }
-  else showToast('Enter 1–' + TOTAL);
-}
-function jumpSurah() {
-  const v = parseInt(document.getElementById('inp-su').value);
-  if(v >= 1 && v <= 114) { goTo(SURAHS[v-1].pg); closePanel('pnav'); }
-  else showToast('Enter 1–114');
-}
-function jumpJuz() {
-  const v = parseInt(document.getElementById('inp-jz').value);
-  if(v >= 1 && v <= 30) { goTo(JUZS[v-1].pg); closePanel('pnav'); }
-  else showToast('Enter 1–30');
-}
+function jumpPage()  { const v=+document.getElementById('inp-pg').value; if(v>=1&&v<=TOTAL){loadPage(v);closePanel('pnav');}else showToast('Enter 1–851'); }
+function jumpSurah() { const v=+document.getElementById('inp-su').value; if(v>=1&&v<=114){loadPage(SURAHS[v-1].pg);closePanel('pnav');}else showToast('Enter 1–114'); }
+function jumpJuz()   { const v=+document.getElementById('inp-jz').value; if(v>=1&&v<=30){loadPage(JUZS[v-1].pg);closePanel('pnav');}else showToast('Enter 1–30'); }
 
-function goTo(n) { loadPage(n); }
+function getSurah(p) { let s=SURAHS[0]; for(let i=SURAHS.length-1;i>=0;i--){if(SURAHS[i].pg<=p){s=SURAHS[i];break;}} return s; }
+function getJuz(p)   { let j=JUZS[0];  for(let i=JUZS.length-1;i>=0;i--){if(JUZS[i].pg<=p){j=JUZS[i];break;}}  return j; }
 
-// ═══════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════
-function getSurah(p) {
-  let s = SURAHS[0];
-  for(let i = SURAHS.length-1; i >= 0; i--) {
-    if(SURAHS[i].pg <= p) { s = SURAHS[i]; break; }
-  }
-  return s;
-}
-function getJuz(p) {
-  let j = JUZS[0];
-  for(let i = JUZS.length-1; i >= 0; i--) {
-    if(JUZS[i].pg <= p) { j = JUZS[i]; break; }
-  }
-  return j;
-}
-
-// ═══════════════════════════════════════════
-// BOOKMARKS
-// ═══════════════════════════════════════════
 function addBookmark() {
-  if(bookmarks.find(b => b.pg === curPage)) {
-    showToast('Page ' + curPage + ' already bookmarked');
-    return;
-  }
-  const s = getSurah(curPage);
-  const j = getJuz(curPage);
-  const name = `${s.en}  ·  Page ${curPage}`;
-  bookmarks.unshift({pg: curPage, name, juz: j.name, date: Date.now()});
+  if(bookmarks.find(b => b.pg===curPage)){ showToast('Page '+curPage+' already bookmarked'); return; }
+  const s=getSurah(curPage), j=getJuz(curPage);
+  bookmarks.unshift({pg:curPage, name:`${s.en}  ·  Page ${curPage}`, juz:j.name, date:Date.now()});
   localStorage.setItem('qtbk', JSON.stringify(bookmarks));
-  showToast('Bookmarked: Page ' + curPage);
+  showToast('Bookmarked: Page '+curPage);
 }
 
 function renderBookmarks() {
   const el = document.getElementById('bk-list');
-  if(!bookmarks.length) {
-    el.innerHTML = '<div class="bk-empty">No bookmarks yet.<br>Tap the bookmark button to save the current page.</div>';
-    return;
-  }
+  if(!bookmarks.length){ el.innerHTML='<div class="bk-empty">No bookmarks yet.<br>Tap the Bookmark button to save the current page.</div>'; return; }
   el.innerHTML = bookmarks.map((b,i) => `
     <div class="bk-item">
-      <div class="bk-icon">🔖</div>
-      <div class="bk-body" onclick="goTo(${b.pg});closePanel('pbk')">
+      <div style="font-size:22px;flex-shrink:0">🔖</div>
+      <div class="bk-body" onclick="loadPage(${b.pg});closePanel('pbk')">
         <div class="bk-name">${b.name}</div>
         <div class="bk-date">${b.juz}  ·  ${new Date(b.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>
       </div>
@@ -903,44 +555,35 @@ function renderBookmarks() {
 
 function deleteBk(i, e) {
   e.stopPropagation();
-  bookmarks.splice(i, 1);
+  bookmarks.splice(i,1);
   localStorage.setItem('qtbk', JSON.stringify(bookmarks));
   renderBookmarks();
   showToast('Bookmark removed');
 }
 
-// ═══════════════════════════════════════════
-// TOAST
-// ═══════════════════════════════════════════
 let toastTimer;
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-// ═══════════════════════════════════════════
-// KEYBOARD
-// ═══════════════════════════════════════════
 document.addEventListener('keydown', e => {
-  if(e.key === 'ArrowRight') loadPage(curPage - 1); // RTL: right = prev
-  if(e.key === 'ArrowLeft')  loadPage(curPage + 1); // RTL: left = next
-  if(e.key === 'ArrowUp')    loadPage(curPage - 1);
-  if(e.key === 'ArrowDown')  loadPage(curPage + 1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowDown')  loadPage(curPage+1);
+  if(e.key==='ArrowRight'||e.key==='ArrowUp')   loadPage(curPage-1);
 });
 
-// ═══════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════
-function init() {
+window.addEventListener('load', () => {
   buildSurahList();
-  buildJuzList();
   loadPage(curPage);
-}
+});
+</script>
 
-window.addEventListener('load', init);
+<script>
+if('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+}
 </script>
 </body>
 </html>
