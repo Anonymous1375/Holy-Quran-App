@@ -513,7 +513,8 @@ function openPanel(id) {
   menuVisible = true;
   document.getElementById('bnav').classList.remove('hidden');
   if(id === 'pnav') {
-    swNavTab('surah');
+    // Always open on surah tab showing current reading position
+    activateTab('surah');
   }
   if(id === 'pbk') renderBookmarks();
   document.getElementById(id).classList.add('open');
@@ -521,38 +522,42 @@ function openPanel(id) {
 
 function closePanel(id) {
   document.getElementById(id).classList.remove('open');
+  // When closing nav, reset selectedJuz so next open reflects real curPage
+  if(id === 'pnav') selectedJuz = null;
 }
 
 // ── NAV TABS ──────────────────────────────────────
-function swNavTab(tab) {
-  document.getElementById('tab-surah-btn').classList.toggle('on', tab==='surah');
-  document.getElementById('tab-juz-btn').classList.toggle('on',   tab==='juz');
-  document.getElementById('t-surah').style.display = tab==='surah' ? '' : 'none';
-  document.getElementById('t-juz').style.display   = tab==='juz'   ? '' : 'none';
+// activateTab: single source of truth for switching tabs and updating highlights
+function activateTab(tab) {
+  document.getElementById('tab-surah-btn').classList.toggle('on', tab === 'surah');
+  document.getElementById('tab-juz-btn').classList.toggle('on',   tab === 'juz');
+  document.getElementById('t-surah').style.display = tab === 'surah' ? '' : 'none';
+  document.getElementById('t-juz').style.display   = tab === 'juz'   ? '' : 'none';
 
   if(tab === 'surah') {
+    // Highlight and scroll to surah of the page we're actually on (curPage)
+    // If user selected a juz+page, curPage was already updated by loadPage
+    refreshSurahHighlight();
+  }
+
+  if(tab === 'juz') {
+    // Select and show pages for juz of curPage, highlight curPage in page list
+    const juzN = getJuz(curPage).n;
+    selectJuz(juzN, false); // false = don't scroll juz list (we do it below)
     setTimeout(() => {
-      if(selectedJuz) {
-        // scroll to first surah in selected juz
-        const juz = JUZS[selectedJuz-1];
-        scrollToCurrentSurah(juz.pg);
-      } else {
-        scrollToCurrentSurah();
-      }
+      const jel = document.getElementById('ji-'+juzN);
+      if(jel) jel.scrollIntoView({block:'center', behavior:'smooth'});
     }, 60);
   }
-  if(tab === 'juz') {
-    // If a juz was previously selected, keep it; otherwise select current juz
-    if(!selectedJuz) selectJuz(getJuz(curPage).n);
-    // Scroll juz list to current juz
-    setTimeout(() => scrollToCurrentJuz(), 60);
-  }
 }
+
+// Called from HTML tab buttons
+function swNavTab(tab) { activateTab(tab); }
 
 // ── SURAH LIST ────────────────────────────────────
 function buildSurahList() {
   document.getElementById('t-surah').innerHTML = SURAHS.map(s => `
-    <div class="surah-item" id="si-${s.n}" onclick="loadPage(${s.pg});closePanel('pnav')">
+    <div class="surah-item" id="si-${s.n}" onclick="goToSurah(${s.pg})">
       <div class="si-num">${s.n}</div>
       <div class="si-body">
         <div class="si-en">${String(s.n).padStart(2,'0')}. ${s.en}</div>
@@ -562,22 +567,28 @@ function buildSurahList() {
     </div>`).join('');
 }
 
-function scrollToCurrentSurah(targetPage) {
-  const pg = targetPage || curPage;
-  const s = getSurah(pg);
-  // Remove highlight from all, add to current
+// Navigate from surah tap — load page then close panel
+function goToSurah(pg) {
+  loadPage(pg);
+  closePanel('pnav');
+}
+
+// Highlight surah matching curPage and scroll to it
+function refreshSurahHighlight() {
+  const s = getSurah(curPage);
   document.querySelectorAll('.surah-item').forEach(el => el.classList.remove('current'));
-  const el = document.getElementById('si-'+s.n);
+  const el = document.getElementById('si-' + s.n);
   if(el) {
     el.classList.add('current');
-    el.scrollIntoView({block:'center', behavior:'smooth'});
+    // Use setTimeout so the tab is visible before scrollIntoView runs
+    setTimeout(() => el.scrollIntoView({block:'center', behavior:'smooth'}), 60);
   }
 }
 
 // ── JUZ LIST ──────────────────────────────────────
 function buildJuzList() {
   document.getElementById('juz-list').innerHTML = JUZS.map(j => `
-    <div class="juz-item" id="ji-${j.n}" onclick="selectJuz(${j.n})">
+    <div class="juz-item" id="ji-${j.n}" onclick="selectJuz(${j.n}, true)">
       <div class="ji-top">
         <span class="ji-name">${j.name}</span>
         <span class="ji-arrow">›</span>
@@ -586,29 +597,37 @@ function buildJuzList() {
     </div>`).join('');
 }
 
-function selectJuz(juzN) {
+// selectJuz: build the page list for a juz and highlight curPage within it
+// scrollJuzList: whether to also scroll the left juz column to this juz
+function selectJuz(juzN, scrollJuzList) {
   selectedJuz = juzN;
 
-  // Highlight selected juz
+  // Highlight selected juz in left column
   document.querySelectorAll('.juz-item').forEach(el => el.classList.remove('selected'));
-  const jel = document.getElementById('ji-'+juzN);
-  if(jel) { jel.classList.add('selected'); jel.scrollIntoView({block:'nearest', behavior:'smooth'}); }
+  const jel = document.getElementById('ji-' + juzN);
+  if(jel) {
+    jel.classList.add('selected');
+    if(scrollJuzList) jel.scrollIntoView({block:'nearest', behavior:'smooth'});
+  }
 
-  const juz = JUZS[juzN-1];
+  const juz    = JUZS[juzN - 1];
   const nextJuz = JUZS[juzN] || null;
-  const juzEnd = nextJuz ? nextJuz.pg - 1 : TOTAL;
+  const juzEnd  = nextJuz ? nextJuz.pg - 1 : TOTAL;
   const pageCount = juzEnd - juz.pg + 1;
 
-  // Build page list for this juz
-  let html = `<div class="jp-header"><div class="jp-header-name">${juz.name}</div><div class="jp-header-sub">${pageCount} pages · starts p.${juz.pg}</div></div>`;
+  // Build right-column page list
+  let html = `<div class="jp-header">
+    <div class="jp-header-name">${juz.name}</div>
+    <div class="jp-header-sub">${pageCount} pages · starts p.${juz.pg}</div>
+  </div>`;
 
   for(let i = 0; i < pageCount; i++) {
     const absPage = juz.pg + i;
-    const isCur = absPage === curPage;
-    const surah = getSurah(absPage);
-    html += `<div class="jp-item${isCur?' current-pg':''}" onclick="loadPage(${absPage});closePanel('pnav')">
+    const isCur   = absPage === curPage;
+    const surah   = getSurah(absPage);
+    html += `<div class="jp-item${isCur ? ' current-pg' : ''}" id="jp-${absPage}" onclick="goToJuzPage(${absPage})">
       <div>
-        <div class="jp-num">Page ${i+1}</div>
+        <div class="jp-num">Page ${i + 1}</div>
         <div class="jp-surah">${surah.en} · p.${absPage}</div>
       </div>
       <div class="jp-arrow">›</div>
@@ -618,34 +637,29 @@ function selectJuz(juzN) {
   const jpEl = document.getElementById('juz-pages');
   jpEl.innerHTML = html;
 
-  // Scroll page list to current page if it's in this juz
+  // Scroll right column to curPage if it's within this juz
   if(curPage >= juz.pg && curPage <= juzEnd) {
     setTimeout(() => {
-      const idx = curPage - juz.pg;
-      const items = jpEl.querySelectorAll('.jp-item');
-      if(items[idx]) items[idx].scrollIntoView({block:'center', behavior:'smooth'});
+      const cpEl = document.getElementById('jp-' + curPage);
+      if(cpEl) cpEl.scrollIntoView({block:'center', behavior:'smooth'});
     }, 60);
   }
 }
 
-function scrollToCurrentJuz() {
-  const j = getJuz(curPage);
-  const el = document.getElementById('ji-'+j.n);
-  if(el) el.scrollIntoView({block:'center', behavior:'smooth'});
+// Navigate from juz page tap — load page, close panel
+// curPage is now updated so both tabs will reflect the correct position
+function goToJuzPage(pg) {
+  loadPage(pg);
+  closePanel('pnav');
 }
 
-// When user selects a juz then taps Surah tab — scroll to first surah in that juz
-function handleSurahTabFromJuz() {
-  if(selectedJuz) {
-    const juz = JUZS[selectedJuz-1];
-    scrollToCurrentSurah(juz.pg);
-  } else {
-    scrollToCurrentSurah();
-  }
+// Refresh the juz page list highlights without rebuilding it
+// Called after page changes while panel stays open (not currently used but safe to have)
+function refreshJuzHighlight() {
+  document.querySelectorAll('.jp-item').forEach(el => el.classList.remove('current-pg'));
+  const el = document.getElementById('jp-' + curPage);
+  if(el) el.classList.add('current-pg');
 }
-
-// Override swNavTab surah case to use juz-aware scroll
-const _origSwNavTab = swNavTab;
 
 // ── HELPERS ───────────────────────────────────────
 function getSurah(p) {
