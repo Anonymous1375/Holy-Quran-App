@@ -1,8 +1,9 @@
 {
-  "qname": "القرآن الكريم — تجويد ملوّن",
+  "name": "القرآن الكريم — تجويد ملوّن",
   "short_name": "القرآن",
   "description": "13-Line Colour Coded Tajweed Quran · Indo-Pak Script · Hafs",
-  "start_url": "/",
+  "start_url": "/Holy-Quran-App/",
+  "scope": "/Holy-Quran-App/",
   "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#0f2318",
@@ -22,7 +23,5 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "categories": ["education", "lifestyle", "religion"],
-  "screenshots": []
+  ]
 }
