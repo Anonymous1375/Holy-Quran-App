@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
@@ -26,10 +26,10 @@ html,body{height:100%;width:100%;overflow:hidden;background:#1a1a1a;color:var(--
 
 #app{display:flex;flex-direction:column;height:100%;width:100%;position:fixed;inset:0;}
 
-#viewer{flex:1;position:relative;overflow:hidden;background:#1a1a1a;display:flex;align-items:center;justify-content:center;touch-action:pinch-zoom;}
+#viewer{flex:1;position:relative;overflow:hidden;background:#1a1a1a;display:flex;align-items:center;justify-content:center;touch-action:none;}
 #img-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform-origin:center center;will-change:transform;}
-#qimg{max-width:100%;max-height:100%;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges;}
-#tap-overlay{position:absolute;inset:0;z-index:5;}
+#qimg{display:block;user-select:none;-webkit-user-drag:none;pointer-events:none;}
+#tap-overlay{position:absolute;inset:0;z-index:5;touch-action:none;}
 
 #loading{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(26,26,26,0.92);transition:opacity .25s ease;}
 #loading.hide{opacity:0;pointer-events:none;}
@@ -395,30 +395,22 @@ function loadPage(n) {
   curPage = n;
   localStorage.setItem('qpg', n);
 
-  const img = document.getElementById('qimg');
   const loader = document.getElementById('loading');
   loader.classList.remove('hide');
 
-  if(preloaded[n]) {
-    img.src = pageUrl(n);
-    img.className = 'pg-anim';
-    loader.classList.add('hide');
-    showIndicator(n);
-    preloadAdjacent(n);
-    return;
-  }
-
-  const tmp = new Image();
-  tmp.onload = () => {
-    img.src = pageUrl(n);
-    img.className = 'pg-anim';
+  qimg.onload = () => {
+    computeBaseScale();
+    sc = 1; tx = 0; ty = 0;
+    wrap.style.transition = '';
+    applyT();
+    qimg.className = 'pg-anim';
     loader.classList.add('hide');
     preloaded[n] = true;
     showIndicator(n);
     preloadAdjacent(n);
   };
-  tmp.onerror = () => loader.classList.add('hide');
-  tmp.src = pageUrl(n);
+  qimg.onerror = () => loader.classList.add('hide');
+  qimg.src = pageUrl(n);
 }
 
 function preloadAdjacent(n) {
@@ -443,9 +435,27 @@ function showIndicator(n) {
 // ── PINCH TO ZOOM ─────────────────────────────────
 const viewer = document.getElementById('viewer');
 const wrap   = document.getElementById('img-wrap');
+const qimg   = document.getElementById('qimg');
 const tapOverlay = document.getElementById('tap-overlay');
 
 let sc=1, tx=0, ty=0;
+// baseScale: the scale that fits the image's native resolution to the
+// viewer (equivalent to the old object-fit:contain). sc=1 means "fit".
+// maxSc: pinch upper bound, guaranteed to reach at least the image's
+// native (1:1) resolution regardless of screen size.
+let baseScale=1, maxSc=5;
+
+function computeBaseScale() {
+  const rect = viewer.getBoundingClientRect();
+  const nw = qimg.naturalWidth, nh = qimg.naturalHeight;
+  if(nw && nh && rect.width && rect.height) {
+    baseScale = Math.min(rect.width / nw, rect.height / nh);
+  } else {
+    baseScale = 1;
+  }
+  maxSc = Math.max(5, 1 / baseScale);
+}
+
 let isPinching=false;
 // pinchOccurred: true once a 2-finger gesture happens in this touch sequence.
 // Stays true until ALL fingers are lifted, preventing the subsequent
@@ -463,7 +473,7 @@ let viewCenterX=0, viewCenterY=0;
 // Single-finger pan reference
 let panOX=0, panOY=0;
 
-function applyT() { wrap.style.transform = `translate(${tx}px,${ty}px) scale(${sc})`; }
+function applyT() { wrap.style.transform = `translate(${tx}px,${ty}px) scale(${baseScale*sc})`; }
 
 function resetT() {
   sc=1; tx=0; ty=0;
@@ -522,7 +532,7 @@ viewer.addEventListener('touchmove', e => {
     const focalY = (p0.y + p1.y) / 2;
 
     let newScale = pinchStartScale * (dist / pinchStartDist);
-    newScale = Math.min(5, Math.max(1, newScale));
+    newScale = Math.min(maxSc, Math.max(1, newScale));
 
     if(newScale <= 1) {
       sc = 1; tx = 0; ty = 0;
@@ -807,6 +817,7 @@ document.addEventListener('keydown', e => {
 // leave the image shifted or partly off-screen, so reset to the default
 // 1x view. The page image itself reflows automatically via object-fit.
 window.addEventListener('resize', () => {
+  computeBaseScale();
   sc = 1; tx = 0; ty = 0;
   wrap.style.transition = '';
   applyT();
