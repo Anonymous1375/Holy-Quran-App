@@ -1,27 +1,21 @@
 {
-  "name": "القرآن الكريم — تجويد ملوّن",
-  "short_name": "القرآن",
-  "description": "13-Line Colour Coded Tajweed Quran · Indo-Pak Script · Hafs",
+  "name": "Colour Coded Tajweed Quran",
+  "short_name": "Tajweed Quran",
+  "description": "13 Line Colour Coded Tajweed Quran — Indo-Pak Script — Hafs",
   "start_url": "/Holy-Quran-App/",
   "scope": "/Holy-Quran-App/",
   "display": "fullscreen",
-  "orientation": "portrait",
-  "background_color": "#0f2318",
-  "theme_color": "#1a3a2a",
-  "lang": "ar",
-  "dir": "rtl",
+  "orientation": "any",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
   "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    {"src":"icon-192.png",
+      "sizes":"192x192",
+      "type":"image/png",
+      "purpose":"any maskable"},
+    {"src":"icon-512.png",
+      "sizes":"512x512",
+      "type":"image/png",
+      "purpose":"any maskable"}
   ]
 }
