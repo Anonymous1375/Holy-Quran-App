@@ -631,8 +631,9 @@ function activateTab(tab) {
 
   if(tab === 'juz') {
     // Select and show pages for juz of curPage, highlight curPage in page list
+    // navigate=false: just display, don't jump pages (we're already on curPage)
     const juzN = getJuz(curPage).n;
-    selectJuz(juzN, false); // false = don't scroll juz list (we do it below)
+    selectJuz(juzN, false, false); // (juzN, scrollJuzList, navigate)
     setTimeout(() => {
       const jel = document.getElementById('ji-'+juzN);
       if(jel) jel.scrollIntoView({block:'center', behavior:'smooth'});
@@ -677,7 +678,7 @@ function refreshSurahHighlight() {
 // ── JUZ LIST ──────────────────────────────────────
 function buildJuzList() {
   document.getElementById('juz-list').innerHTML = JUZS.map(j => `
-    <div class="juz-item" id="ji-${j.n}" onclick="selectJuz(${j.n}, true)">
+    <div class="juz-item" id="ji-${j.n}" onclick="selectJuz(${j.n}, true, true)">
       <div class="ji-top">
         <span class="ji-name">${j.name}</span>
         <span class="ji-arrow">›</span>
@@ -686,9 +687,12 @@ function buildJuzList() {
     </div>`).join('');
 }
 
-// selectJuz: build the page list for a juz and highlight curPage within it
+// selectJuz: optionally load the juz's first page, build its page list,
+// and highlight curPage within it.
 // scrollJuzList: whether to also scroll the left juz column to this juz
-function selectJuz(juzN, scrollJuzList) {
+// navigate: if true, jump straight to the juz's first page (user clicked
+//           a juz). If false, just display the list for curPage (tab opened).
+function selectJuz(juzN, scrollJuzList, navigate) {
   selectedJuz = juzN;
 
   // Highlight selected juz in left column
@@ -703,6 +707,9 @@ function selectJuz(juzN, scrollJuzList) {
   const nextJuz = JUZS[juzN] || null;
   const juzEnd  = nextJuz ? nextJuz.pg - 1 : TOTAL;
   const pageCount = juzEnd - juz.pg + 1;
+
+  // Jump straight to the juz's first page if requested (user clicked the juz)
+  if(navigate && curPage !== juz.pg) loadPage(juz.pg);
 
   // Build right-column page list
   let html = `<div class="jp-header">
