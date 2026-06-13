@@ -16,24 +16,23 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = e.request.url;
 
-  // Cache-first for Quran page images (GitHub Pages PNGs)
-  if(url.includes('anonymous1375.github.io') || url.endsWith('.png') || url.endsWith('.jpg')) {
+  // Only cache Quran page images
+  if (url.endsWith('.png') || url.endsWith('.jpg')) {
     e.respondWith(
       caches.open(CACHE).then(async cache => {
         const cached = await cache.match(e.request);
-        if(cached) return cached;
-        try {
-          const fresh = await fetch(e.request);
-          if(fresh.ok) cache.put(e.request, fresh.clone());
-          return fresh;
-        } catch {
-          return new Response('', {status: 503});
-        }
+        if (cached) return cached;
+
+        const fresh = await fetch(e.request);
+        if (fresh.ok) cache.put(e.request, fresh.clone());
+        return fresh;
       })
     );
     return;
   }
 
-  // App shell — cache first
-  e.respondWith(caches.match(e.request).then(c => c || fetch(e.request)));
+  // Network first for app pages
+  e.respondWith(
+    fetch(e.request).catch(() => caches.match(e.request))
+  );
 });
