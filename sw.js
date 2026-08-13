@@ -1,4 +1,4 @@
-const CACHE = 'quran-v10.5';
+const CACHE = 'quran-v10.6'; // v10.6: invalidates cached images so corrected pages 0401-0430/0529 reload
 const SHELL = ['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', e => {
